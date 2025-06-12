@@ -1,0 +1,55 @@
+# Install required libraries
+!pip install scikit-image opencv-python-headless matplotlib
+
+# Import libraries
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage import io, filters, morphology, measure
+from skimage.color import rgb2gray
+from skimage.morphology import skeletonize
+from scipy import ndimage as ndi
+
+# Load image
+image_path = '/content/sem_eq_3.png'
+img = io.imread(image_path)
+
+# Convert RGBA → RGB → Grayscale
+if img.shape[-1] == 4:
+    img_rgb = img[:, :, :3]
+else:
+    img_rgb = img
+
+gray = rgb2gray(img_rgb)
+
+# Apply Gaussian blur and Otsu threshold
+blur = cv2.GaussianBlur(gray, (5, 5), 0)
+thresh = filters.threshold_otsu(blur)
+binary = blur < thresh  # Fibers are dark, so invert
+
+# Skeletonization
+skeleton = skeletonize(binary)
+
+# Distance transform
+distance = ndi.distance_transform_edt(binary)
+fiber_radius = distance[skeleton]
+fiber_diameter = fiber_radius * 2
+
+# Convert pixels to micrometers
+scale_bar_pixels = 167  # Number of pixels in the scale bar (from image)
+microns_per_pixel = 5.0 / scale_bar_pixels
+fiber_diameter_microns = fiber_diameter * microns_per_pixel
+
+# Print results
+print(f"Fiber count: {len(fiber_diameter_microns)}")
+print(f"Mean diameter: {np.mean(fiber_diameter_microns):.6f} μm")
+print(f"Std deviation: {np.std(fiber_diameter_microns):.6f} μm")
+
+# Plot histogram
+plt.figure(figsize=(8, 5))
+plt.hist(fiber_diameter_microns, bins=30, color='skyblue', edgecolor='black')
+plt.xlabel('Fiber Diameter (μm)')
+plt.ylabel('Frequency')
+plt.title('Fiber Diameter Distribution')
+plt.grid(True)
+plt.show()
