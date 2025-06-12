@@ -1,0 +1,157 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Load the image from the specified path
+img = plt.imread("/content/3.jpg")
+
+# Display the image in grayscale
+plt.imshow(img, cmap='gray')
+
+# Print the image array
+print(img)
+
+# Print the shape (height, width) of the image
+print(img.shape)
+
+# Print the minimum pixel value in the image
+print(img.min())
+
+# Print the maximum pixel value in the image
+print(img.max())
+
+# Make a copy of the image
+img_2 = img.copy()
+
+# Set all pixels in the 50th column to 255 (white)
+img_2[:,50] = 255
+
+# Display the modified image with a white vertical line
+plt.imshow(img_2, cmap='gray', vmin=0, vmax=255)
+
+# Create a new figure
+plt.figure()
+
+# Extract the pixel values of the 50th column
+line = img[:,50]
+
+# Show the shape of the extracted column
+line.shape
+
+# Plot the intensity values of the 50th column as a vector
+plt.plot(line) # display vector
+
+# Flatten the image into a 1D array
+img_flatten = img.flatten()
+
+# Plot a histogram of pixel intensities (default bins)
+plt.hist(img_flatten, color='skyblue', edgecolor='black')
+
+# Plot a histogram with 100 bins
+plt.figure()
+plt.hist(img_flatten, bins=100, color='skyblue', edgecolor='black')
+
+# Plot a histogram with 256 bins
+plt.figure()
+plt.hist(img_flatten, bins=256, color='skyblue', edgecolor='black')
+
+# Print the mean pixel value (luminance)
+print(np.mean(img)) # Luminance
+
+# Print the standard deviation of pixel values (contrast)
+print(np.std(img)) # Contrast
+
+# Create a new figure with a specific size
+plt.figure(figsize=(15,5))
+
+# Print maximum and minimum pixel values
+print(img.max(), img.min())
+
+# Perform contrast stretching to enhance image contrast
+img_stretched = (img-img.min())*((255)/(img.max()-img.min()))
+
+# Show the stretched image and its histogram
+plt.subplot(1,2,1), plt.imshow(img_stretched, cmap='gray', vmin=0, vmax=255)
+plt.subplot(1,2,2), plt.hist(img_stretched.flatten(), bins=100, range=(0,255))
+
+# Print mean and standard deviation after stretching
+print(np.mean(img_stretched))
+print(np.std(img_stretched))
+
+# Create a new figure for saturation adjustment
+plt.figure(figsize=(15,5))
+
+# Copy the image for saturation processing
+sem_sat = img.copy()
+shape = sem_sat.shape
+
+# Clip pixel values to the range [80, 150]
+for i in range (0, shape[0]):
+    for j in range (0, shape[1]):
+        if sem_sat[i][j] > 150:
+            sem_sat[i][j] = 150
+        elif sem_sat[i][j] < 80:
+            sem_sat[i][j] = 80
+
+# Show the clipped image and its histogram
+plt.subplot(1,2,1), plt.imshow(sem_sat, cmap='gray', vmin=0, vmax=255)
+plt.subplot(1,2,2), plt.hist(sem_sat.flatten(), bins=100)
+
+# Create a new figure for stretched and clipped image
+plt.figure(figsize=(15,5))
+
+# Contrast stretching on the clipped image
+sem_stretched_sat = (sem_sat-sem_sat.min())*((255)/(sem_sat.max()-sem_sat.min()))
+
+# Show the stretched, clipped image and its histogram
+plt.subplot(1,2,1), plt.imshow(sem_stretched_sat, cmap='gray', vmin=0, vmax=255)
+plt.subplot(1,2,2), plt.hist(sem_stretched_sat.flatten(), bins=100)
+
+# Print mean and standard deviation of the stretched, clipped image
+print(np.mean(sem_stretched_sat))
+print(np.std(sem_stretched_sat))
+
+# Plot histogram of the original image (256 bins)
+plt.figure()
+hist, bin = np.histogram(img, bins=256, range=(0,255))
+plt.plot(hist), plt.title("Histogram")
+
+# Plot normalized histogram
+plt.figure()
+tot_pxl = img.size
+hist_n = hist/tot_pxl
+plt.plot(hist_n), plt.title("Normalized Histogram")
+
+# Plot cumulative histogram
+plt.figure()
+hist_c = np.cumsum(hist_n)
+plt.plot(hist_c), plt.title("Cumulative histogram")
+
+# Copy the image for histogram equalization
+sem_eq = img.copy()
+
+# Apply histogram equalization to the image
+for i in range(0, shape[0]):
+    for j in range (0, shape[1]):
+        gray_level = int(img[i][j])
+        sem_eq[i][j] = np.round(255*hist_c[gray_level])
+
+# Show the histogram-equalized image and its histogram
+plt.figure(figsize=(15,5))
+plt.subplot(1,2,1), plt.imshow(sem_eq, cmap='gray', vmin=0, vmax=255)
+plt.subplot(1,2,2), plt.hist(sem_eq.flatten(), bins=256, range=(0,255))
+
+# Print mean and standard deviation of the equalized image
+print(np.mean(sem_eq))
+print(np.std(sem_eq))
+
+# Show the equalized image without axes
+plt.figure(figsize=(6, 6))
+plt.imshow(sem_eq, cmap='gray')
+plt.axis('off')
+
+# Save the equalized image as a PNG file
+plt.savefig('sem_eq.png', bbox_inches='tight', pad_inches=0)
+
+# Download the saved image file in Colab
+from google.colab import files
+files.download('sem_eq.png')
